@@ -1,0 +1,6 @@
+{
+  "name": "Focus Timer",
+  "description": "A lightweight and elegant Pomodoro focus timer with a clean, distraction-free design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
