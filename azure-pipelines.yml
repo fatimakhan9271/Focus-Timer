@@ -1,21 +1,45 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+name: Deploy React App to Azure Web App
 
-trigger:
-- main
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-pool:
-  vmImage: ubuntu-latest
+env:
+  AZURE_WEBAPP_NAME: FocusTime-App
+  AZURE_WEBAPP_PACKAGE_PATH: './build'
+  NODE_VERSION: '18.x'
 
-steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js'
-
-- script: |
-    npm install
-    npm run build
-  displayName: 'npm install and build'
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+    
+    - name: 'Setup Node.js ${{ env.NODE_VERSION }}'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: 'Install Dependencies'
+      run: |
+        npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+    
+    - name: 'Build React App'
+      run: |
+        npm run build
+        # Create staticwebapp.config.json for SPA routing
+        echo '{"navigationFallback":{"rewrite":"/index.html","exclude":["/images/*","/css/*","/js/*","/*.js","/*.map","/static/*"]}}' > build/staticwebapp.config.json
+    
+    - name: 'List build folder contents'
+      run: ls -la build/
+    
+    - name: 'Deploy to Azure Web App'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
