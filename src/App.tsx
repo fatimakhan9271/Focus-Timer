@@ -329,7 +329,7 @@ export default function App() {
         <nav className="flex flex-col gap-8 flex-1 justify-start mt-4">
           <button 
             className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-indigo-600 shadow-xs"
-            title="Focus Timer Dashboard"
+            title="Focus Timer Dashboard Button"
           >
             <Layout className="w-5 h-5" />
           </button>
