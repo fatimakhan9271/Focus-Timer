@@ -1,4 +1,4 @@
-# Azure DevOps CI/CD Pipeline for React App
+# Azure DevOps CI/CD Pipeline for React App (Focus Timer)
 
 trigger:
 - main
@@ -6,48 +6,70 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-variables:
-  azureSubscription: 'Azure subscription 1'  
-  appServiceName: 'FocusTime'                    
-  nodeVersion: '18.x'
+stages:
+# --- STAGE 1: CONTINUOUS INTEGRATION (CI) ---
+- stage: CI_Build
+  displayName: 'CI: Build Application'
+  jobs:
+  - job: RunNpmBuild
+    displayName: 'Compile React Project'
+    steps:
+    # Install Node.js
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+      displayName: 'Install Node.js'
 
-steps:
-# Install Node.js
-- task: NodeTool@0
-  inputs:
-    versionSpec: '$(nodeVersion)'
-  displayName: 'Install Node.js'
+    # Inject environment variables and build
+    - script: |
+        npm install --legacy-peer-deps
+        npm run build
+      displayName: 'npm install and build'
+      env:
+        # Add your environment variables here if needed
+        VITE_API_BASE_URL: 'https://your-api-url.com'  # Optional
+        VITE_AUTH0_DOMAIN: 'your-auth0-domain'         # Optional
 
-# Install dependencies and build
-- script: |
-    npm install --legacy-peer-deps
-    npm run build
-  displayName: 'npm install and build'
+    # Inject Express into the build artifact directory for server routing (if needed)
+    - script: |
+        cp -r dist dist_backup || true
+        mkdir -p dist_backup
+        cp -r dist/* dist_backup/ || true
+        echo "Build completed successfully"
+      displayName: 'Prepare Production Web Server Environment'
 
-# Create deployment ZIP (Vite outputs to 'dist')
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: 'dist'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    replaceExistingArchive: true
-  displayName: 'Create deployment package'
+    # Publish the build artifact
+    - task: PublishPipelineArtifact@1
+      displayName: 'Save Built Files'
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/dist'
+        artifact: 'build_output'
 
-# Publish artifact
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-  displayName: 'Publish artifact'
+# --- STAGE 2: CONTINUOUS DELIVERY (CD) ---
+- stage: CD_Deploy
+  displayName: 'CD: Deploy to Azure'
+  dependsOn: CI_Build
+  condition: succeeded()
+  jobs:
+  - job: ExecuteDeploy
+    displayName: 'Push to Azure Web App'
+    steps:
+    # Download the built artifact
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Retrieve Built Files'
+      inputs:
+        buildType: 'current'
+        artifactName: 'build_output'
+        targetPath: '$(Pipeline.Workspace)/drop'
 
-# Deploy to Azure Web App
-- task: AzureWebApp@1
-  inputs:
-    azureSubscription: '$(azureSubscription)'
-    appType: 'webAppLinux'
-    appName: '$(appServiceName)'
-    package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    runtimeStack: 'NODE|$(nodeVersion)-lts'
-    startUpCommand: 'npx serve -s dist'
-  displayName: 'Deploy to Azure Web App'
+    # Deploy to Azure Web App
+    - task: AzureRmWebAppDeployment@4
+      displayName: 'Deploy to Azure Web App'
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: 'azure-service-connection'  # Your service connection name
+        appType: 'webAppLinux'
+        WebAppName: 'FocusTime'                        # Your Web App name
+        Package: '$(Pipeline.Workspace)/drop'
+        RuntimeStack: 'NODE|18-lts'
+        StartupCommand: 'npx serve -s .'
