@@ -1,0 +1,14 @@
+# Create SPA config in public folder
+@'
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/images/*", "/css/*", "/js/*", "/*.js", "/*.map", "/static/*"]
+  }
+}
+'@ | Out-File -FilePath "public\staticwebapp.config.json" -Encoding UTF8
+
+# Add to git
+git add public/staticwebapp.config.json
+git commit -m "Add SPA routing config for Static Web App"
+git push origin main
