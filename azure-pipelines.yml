@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: FocusTime-App
+  AZURE_WEBAPP_NAME: FocusTime
   AZURE_WEBAPP_PACKAGE_PATH: './build'
   NODE_VERSION: '18.x'
 
@@ -31,7 +31,6 @@ jobs:
     - name: 'Build React App'
       run: |
         npm run build
-        # Create staticwebapp.config.json for SPA routing
         echo '{"navigationFallback":{"rewrite":"/index.html","exclude":["/images/*","/css/*","/js/*","/*.js","/*.map","/static/*"]}}' > build/staticwebapp.config.json
     
     - name: 'List build folder contents'
