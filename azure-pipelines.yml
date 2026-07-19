@@ -1,7 +1,4 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+# Azure DevOps CI/CD Pipeline for React App
 
 trigger:
 - main
@@ -9,13 +6,48 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  azureSubscription: 'Azure subscription 1'  
+  appServiceName: 'FocusTime'                    
+  nodeVersion: '18.x'
+
 steps:
+# Install Node.js
 - task: NodeTool@0
   inputs:
-    versionSpec: '20.x'
+    versionSpec: '$(nodeVersion)'
   displayName: 'Install Node.js'
 
+# Install dependencies and build
 - script: |
-    npm install
+    npm install --legacy-peer-deps
     npm run build
   displayName: 'npm install and build'
+
+# Create deployment ZIP (Vite outputs to 'dist')
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: 'dist'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+  displayName: 'Create deployment package'
+
+# Publish artifact
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+  displayName: 'Publish artifact'
+
+# Deploy to Azure Web App
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: '$(azureSubscription)'
+    appType: 'webAppLinux'
+    appName: '$(appServiceName)'
+    package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    runtimeStack: 'NODE|$(nodeVersion)-lts'
+    startUpCommand: 'npx serve -s dist'
+  displayName: 'Deploy to Azure Web App'
