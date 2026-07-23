@@ -1,5 +1,3 @@
-# Azure DevOps CI/CD Pipeline for React App (Static Web App)
-
 trigger:
 - main
 
@@ -7,10 +5,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-- group: static-web-app-variables  # ← This links to the secure variable group
+- group: static-web-app-variables
 
 stages:
-# --- STAGE 1: CONTINUOUS INTEGRATION (CI) ---
 - stage: CI_Build
   displayName: 'CI: Build Application'
   jobs:
@@ -34,7 +31,6 @@ stages:
         targetPath: '$(System.DefaultWorkingDirectory)/dist'
         artifact: 'build_output'
 
-# --- STAGE 2: CONTINUOUS DELIVERY (CD) ---
 - stage: CD_Deploy
   displayName: 'CD: Deploy to Azure Static Web App'
   dependsOn: CI_Build
@@ -50,12 +46,14 @@ stages:
         artifactName: 'build_output'
         targetPath: '$(Pipeline.Workspace)/drop'
 
-    # Deploy using Azure CLI with secure token
-- script: |
-    DEPLOYMENT_TOKEN="$(DEPLOYMENT_TOKEN)"
-    curl -X POST \
-      -H "Authorization: Bearer $DEPLOYMENT_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"repository": "https://github.com/fatimakhan9271/Focus-Timer", "branch": "main"}' \
-      https://focustime.azurestaticapps.net/api/deploy
-  displayName: 'Deploy using REST API'
+    # 🔑 THIS IS THE CORRECT REST API DEPLOYMENT
+    - script: |
+        DEPLOYMENT_TOKEN="$(DEPLOYMENT_TOKEN)"
+        echo "📦 Triggering deployment via REST API..."
+        curl -X POST \
+          -H "Authorization: Bearer $DEPLOYMENT_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"repository": "https://github.com/fatimakhan9271/Focus-Timer", "branch": "main"}' \
+          https://green-stone-0ab308d0f.7.azurestaticapps.net
+        echo "✅ Deployment request sent!"
+      displayName: 'Deploy to Azure Static Web App'
