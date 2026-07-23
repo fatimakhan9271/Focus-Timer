@@ -52,15 +52,10 @@ stages:
 
     # Deploy using Azure CLI with secure token
 - script: |
-    az extension add --name staticwebapp --yes
-    az staticwebapp appsettings set \
-      --name "FocusTime" \
-      --resource-group "DefaultResourceGroup-CCAN" \
-      --setting-name "DEPLOYMENT_TOKEN" \
-      --value "$(DEPLOYMENT_TOKEN)"
-    az staticwebapp deployment \
-      --name "FocusTime" \
-      --resource-group "DefaultResourceGroup-CCAN" \
-      --source "$(Pipeline.Workspace)/drop" \
-      --branch "main"
-  displayName: 'Deploy to Azure Static Web App'
+    DEPLOYMENT_TOKEN="$(DEPLOYMENT_TOKEN)"
+    curl -X POST \
+      -H "Authorization: Bearer $DEPLOYMENT_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"repository": "https://github.com/fatimakhan9271/Focus-Timer", "branch": "main"}' \
+      https://focustime.azurestaticapps.net/api/deploy
+  displayName: 'Deploy using REST API'
