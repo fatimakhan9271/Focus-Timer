@@ -51,11 +51,16 @@ stages:
         targetPath: '$(Pipeline.Workspace)/drop'
 
     # Deploy using Azure CLI with secure token
-    - script: |
-        az extension add --name staticwebapp --yes
-        az staticwebapp deploy \
-          --name "FocusTime" \
-          --resource-group "DefaultResourceGroup-CCAN" \
-          --source "$(Pipeline.Workspace)/drop" \
-          --token "$(DEPLOYMENT_TOKEN)"  # ← Securely referenced
-      displayName: 'Deploy to Azure Static Web App'
+- script: |
+    az extension add --name staticwebapp --yes
+    az staticwebapp appsettings set \
+      --name "FocusTime" \
+      --resource-group "DefaultResourceGroup-CCAN" \
+      --setting-name "DEPLOYMENT_TOKEN" \
+      --value "$(DEPLOYMENT_TOKEN)"
+    az staticwebapp deployment \
+      --name "FocusTime" \
+      --resource-group "DefaultResourceGroup-CCAN" \
+      --source "$(Pipeline.Workspace)/drop" \
+      --branch "main"
+  displayName: 'Deploy to Azure Static Web App'
