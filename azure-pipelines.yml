@@ -62,4 +62,4 @@ stages:
         appLocation: '$(Pipeline.Workspace)/drop'
         apiLocation: ''
         outputLocation: ''
-        azureStaticWebAppsApiToken: $(9682e1fa0a4b1f77ba338cd94ef881e810e15ce00065e4e1ca4e5e51fabf308607-7fb7bb36-c48d-47f0-8824-fa2115b2fc2400f04190ab308d0f)
+        azureStaticWebAppsApiToken: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
