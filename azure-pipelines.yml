@@ -1,10 +1,13 @@
-# Azure DevOps CI/CD Pipeline for React App (Focus Timer)
+# Azure DevOps CI/CD Pipeline for React App (Static Web App)
 
 trigger:
 - main
 
 pool:
   vmImage: ubuntu-latest
+
+variables:
+- group: static-web-app-variables
 
 stages:
 # --- STAGE 1: CONTINUOUS INTEGRATION (CI) ---
@@ -14,29 +17,18 @@ stages:
   - job: RunNpmBuild
     displayName: 'Compile React Project'
     steps:
-    # Install Node.js
+    # Install Node.js (updated to 20.x for compatibility)
     - task: NodeTool@0
       inputs:
         versionSpec: '20.x'
       displayName: 'Install Node.js'
 
-    # Inject environment variables and build
+    # Clean install and build
     - script: |
+        rm -rf node_modules package-lock.json
         npm install --legacy-peer-deps
         npm run build
       displayName: 'npm install and build'
-      env:
-        # Add your environment variables here if needed
-        VITE_API_BASE_URL: 'https://your-api-url.com'  # Optional
-        VITE_AUTH0_DOMAIN: 'your-auth0-domain'         # Optional
-
-    # Inject Express into the build artifact directory for server routing (if needed)
-    - script: |
-        cp -r dist dist_backup || true
-        mkdir -p dist_backup
-        cp -r dist/* dist_backup/ || true
-        echo "Build completed successfully"
-      displayName: 'Prepare Production Web Server Environment'
 
     # Publish the build artifact
     - task: PublishPipelineArtifact@1
@@ -47,12 +39,12 @@ stages:
 
 # --- STAGE 2: CONTINUOUS DELIVERY (CD) ---
 - stage: CD_Deploy
-  displayName: 'CD: Deploy to Azure'
+  displayName: 'CD: Deploy to Azure Static Web App'
   dependsOn: CI_Build
   condition: succeeded()
   jobs:
   - job: ExecuteDeploy
-    displayName: 'Push to Azure Web App'
+    displayName: 'Push to Azure Static Web App'
     steps:
     # Download the built artifact
     - task: DownloadPipelineArtifact@2
@@ -62,14 +54,12 @@ stages:
         artifactName: 'build_output'
         targetPath: '$(Pipeline.Workspace)/drop'
 
-    # Deploy to Azure Web App
-    - task: AzureRmWebAppDeployment@4
-      displayName: 'Deploy to Azure Web App'
+    # Deploy to Azure Static Web App
+    - task: AzureStaticWebApp@0
+      displayName: 'Deploy to Azure Static Web App'
       inputs:
-        ConnectionType: 'AzureRM'
-        azureSubscription: 'azure-service-connection'  # Your service connection name
-        appType: 'webAppLinux'
-        WebAppName: 'FocusTime'                        # Your Web App name
-        Package: '$(Pipeline.Workspace)/drop'
-        RuntimeStack: 'NODE|18-lts'
-        StartupCommand: 'npx serve -s .'
+        azureSubscription: 'azure-service-connection'
+        appLocation: '$(Pipeline.Workspace)/drop'
+        apiLocation: ''
+        outputLocation: ''
+        azureStaticWebAppsApiToken: $(9682e1fa0a4b1f77ba338cd94ef881e810e15ce00065e4e1ca4e5e51fabf308607-7fb7bb36-c48d-47f0-8824-fa2115b2fc2400f04190ab308d0f)
