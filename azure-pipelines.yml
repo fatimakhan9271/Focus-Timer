@@ -6,9 +6,6 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
-variables:
-- group: static-web-app-variables
-
 stages:
 # --- STAGE 1: CONTINUOUS INTEGRATION (CI) ---
 - stage: CI_Build
