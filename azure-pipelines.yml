@@ -6,6 +6,9 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+- group: static-web-app-variables  # ← This links to the secure variable group
+
 stages:
 # --- STAGE 1: CONTINUOUS INTEGRATION (CI) ---
 - stage: CI_Build
@@ -47,14 +50,12 @@ stages:
         artifactName: 'build_output'
         targetPath: '$(Pipeline.Workspace)/drop'
 
-    # Option 1: Using AzureStaticWebApp@1 (Recommended)
-    - task: AzureStaticWebApp@1
+    # Deploy using Azure CLI with secure token
+    - script: |
+        az extension add --name staticwebapp --yes
+        az staticwebapp deploy \
+          --name "FocusTime" \
+          --resource-group "DefaultResourceGroup-CCAN" \
+          --source "$(Pipeline.Workspace)/drop" \
+          --token "$(DEPLOYMENT_TOKEN)"  # ← Securely referenced
       displayName: 'Deploy to Azure Static Web App'
-      inputs:
-        azureSubscription: 'azure-service-connection'
-        appLocation: '$(Pipeline.Workspace)/drop'
-        apiLocation: ''
-        outputLocation: ''
-        appArtifactLocation: '$(Pipeline.Workspace)/drop'
-        skipAppBuild: true
-        deploymentToken: '2aa4272245548c5c38cd014c179be70086898eb79ca1315c7cc08d2e8af2b2a807-035e8e69-b8d8-4ec8-bc13-6515fc30301700f04190ab308d0f'
