@@ -14,20 +14,17 @@ stages:
   - job: RunNpmBuild
     displayName: 'Compile React Project'
     steps:
-    # Install Node.js (updated to 20.x for compatibility)
     - task: NodeTool@0
       inputs:
         versionSpec: '20.x'
       displayName: 'Install Node.js'
 
-    # Clean install and build
     - script: |
         rm -rf node_modules package-lock.json
         npm install --legacy-peer-deps
         npm run build
       displayName: 'npm install and build'
 
-    # Publish the build artifact
     - task: PublishPipelineArtifact@1
       displayName: 'Save Built Files'
       inputs:
@@ -43,7 +40,6 @@ stages:
   - job: ExecuteDeploy
     displayName: 'Push to Azure Static Web App'
     steps:
-    # Download the built artifact
     - task: DownloadPipelineArtifact@2
       displayName: 'Retrieve Built Files'
       inputs:
@@ -51,12 +47,18 @@ stages:
         artifactName: 'build_output'
         targetPath: '$(Pipeline.Workspace)/drop'
 
-    # Deploy to Azure Static Web App
-- task: AzureStaticWebApp@0
-  displayName: 'Deploy to Azure Static Web App'
-  inputs:
-    azureSubscription: 'azure-service-connection'
-    appLocation: '$(Pipeline.Workspace)/drop'
-    apiLocation: ''
-    outputLocation: ''
-    azureStaticWebAppsApiToken: '2aa4272245548c5c38cd014c179be70086898eb79ca1315c7cc08d2e8af2b2a807-035e8e69-b8d8-4ec8-bc13-6515fc30301700f04190ab308d0f'
+    # Deploy using Azure CLI instead of the Static Web App task
+    - script: |
+        az login --service-principal -u $(AZURE_CLIENT_ID) -p $(AZURE_CLIENT_SECRET) --tenant $(AZURE_TENANT_ID)
+        az extension add --name staticwebapp
+        az staticwebapp deploy \
+          --name "FocusTime" \
+          --resource-group "DefaultResourceGroup-CCAN" \
+          --source "https://github.com/fatimakhan9271/Focus-Timer" \
+          --branch "main" \
+          --token "2aa4272245548c5c38cd014c179be70086898eb79ca1315c7cc08d2e8af2b2a807-035e8e69-b8d8-4ec8-bc13-6515fc30301700f04190ab308d0f"
+      displayName: 'Deploy to Azure Static Web App'
+      env:
+        AZURE_CLIENT_ID: $(AZURE_CLIENT_ID)
+        AZURE_CLIENT_SECRET: $(AZURE_CLIENT_SECRET)
+        AZURE_TENANT_ID: $(AZURE_TENANT_ID)
