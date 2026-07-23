@@ -47,11 +47,14 @@ stages:
         artifactName: 'build_output'
         targetPath: '$(Pipeline.Workspace)/drop'
 
-    - task: AzureStaticWebApp@0
+    # Option 1: Using AzureStaticWebApp@1 (Recommended)
+    - task: AzureStaticWebApp@1
       displayName: 'Deploy to Azure Static Web App'
       inputs:
         azureSubscription: 'azure-service-connection'
         appLocation: '$(Pipeline.Workspace)/drop'
         apiLocation: ''
         outputLocation: ''
-        azureStaticWebAppsApiToken: '2aa4272245548c5c38cd014c179be70086898eb79ca1315c7cc08d2e8af2b2a807-035e8e69-b8d8-4ec8-bc13-6515fc30301700f04190ab308d0f'
+        appArtifactLocation: '$(Pipeline.Workspace)/drop'
+        skipAppBuild: true
+        deploymentToken: '2aa4272245548c5c38cd014c179be70086898eb79ca1315c7cc08d2e8af2b2a807-035e8e69-b8d8-4ec8-bc13-6515fc30301700f04190ab308d0f'
